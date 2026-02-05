@@ -56,7 +56,7 @@
     // Stop any active polling
     ab.stopLiveCount = function() {
         if (activeInterval) {
-            clearInterval(activeInterval);
+            clearTimeout(activeInterval);
             activeInterval = null;
         }
     };
@@ -91,8 +91,12 @@
                 console.error('Users API error:', err);
             });
 
-        // Helper to run request and handle callback
-        function run() {
+        // Handle interval parameter
+        // - undefined: default to 10 seconds
+        // - 0: single invocation only (no polling)
+        // - > 0: use provided interval (minimum 10 seconds)
+        if (interval === 0) {
+            // Single invocation only, no polling
             makeRequest(deviceId)
                 .then(function(data) {
                     if (callback) callback(null, data);
@@ -100,17 +104,6 @@
                 .catch(function(err) {
                     if (callback) callback(err, null);
                 });
-        }
-
-        // Execute immediately
-        run();
-
-        // Handle interval parameter
-        // - undefined: default to 10 seconds
-        // - 0: single invocation only (no polling)
-        // - > 0: use provided interval (minimum 10 seconds)
-        if (interval === 0) {
-            // Single invocation only, no polling
             return;
         }
 
@@ -126,7 +119,23 @@
             }
         }
 
-        activeInterval = setInterval(run, intervalSeconds * 1000);
+        // Recursive function that waits for each request to complete before scheduling the next
+        function runWithInterval() {
+            makeRequest(deviceId)
+                .then(function(data) {
+                    if (callback) callback(null, data);
+                })
+                .catch(function(err) {
+                    if (callback) callback(err, null);
+                })
+                .finally(function() {
+                    // Schedule next request after current one completes (success or failure)
+                    activeInterval = setTimeout(runWithInterval, intervalSeconds * 1000);
+                });
+        }
+
+        // Start the polling cycle
+        runWithInterval();
     };
 
     // Expose ab globally
