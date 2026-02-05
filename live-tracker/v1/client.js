@@ -4,7 +4,8 @@
     
     // Configuration
     var CONFIG = {
-        url: 'https://spd-election.onrender.com/analytics/live',
+        liveUrl: 'https://spd-election.onrender.com/analytics/live',
+        usersUrl: 'https://spd-election.onrender.com/analytics/users',
         minInterval: 10
     };
 
@@ -31,7 +32,18 @@
     }
 
     function makeRequest(deviceId) {
-        return fetch(CONFIG.url, {
+        return fetch(CONFIG.liveUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deviceId: deviceId })
+        }).then(function(response) {
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.json();
+        });
+    }
+
+    function makeUsersRequest(deviceId) {
+        return fetch(CONFIG.usersUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ deviceId: deviceId })
@@ -68,6 +80,16 @@
 
         // Clear any existing interval before starting a new one
         ab.stopLiveCount();
+
+        // Make one-time call to users API
+        makeUsersRequest(deviceId)
+            .then(function(data) {
+                // Users count received, data.count available
+                console.log('Users API called successfully');
+            })
+            .catch(function(err) {
+                console.error('Users API error:', err);
+            });
 
         // Helper to run request and handle callback
         function run() {
