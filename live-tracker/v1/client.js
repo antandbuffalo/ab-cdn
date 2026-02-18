@@ -33,8 +33,8 @@
 
     function makeRequest(config) {
         var headers = { 'Content-Type': 'application/json' };
-        if (config.origin) {
-            headers['x-origin'] = config.origin;
+        if (config.domain) {
+            headers['x-domain'] = config.domain;
         }
 
         return fetch(CONFIG.liveUrl, {
@@ -49,8 +49,8 @@
 
     function makeUsersRequest(config) {
         var headers = { 'Content-Type': 'application/json' };
-        if (config.origin) {
-            headers['x-origin'] = config.origin;
+        if (config.domain) {
+            headers['x-domain'] = config.domain;
         }
 
         return fetch(CONFIG.usersUrl, {
@@ -81,11 +81,11 @@
 
         var deviceId = (options.deviceId && options.deviceId.trim()) || getOrGenerateDeviceId();
         var interval = options.interval;
-        var origin = options.origin;
+        var domain = options.domain;
 
         var config = {
             deviceId: deviceId,
-            origin: origin
+            domain: domain
         };
 
         // Clear any existing interval before starting a new one
@@ -167,19 +167,19 @@
 //   else console.log('Live count:', data.count);
 // });
 
-// 3. Auto-repeat every 30 seconds with custom origin:
+// 3. Auto-repeat every 30 seconds with custom domain:
 // ab.getLiveCount({ 
 //   interval: 30,
-//   origin: 'my-custom-origin'
+//   domain: 'my-custom-domain'
 // }, function(error, data) {
 //   if (error) console.error(error);
 //   else console.log('Live count:', data.count);
 // });
 
-// 4. Custom device ID and origin:
+// 4. Custom device ID and domain:
 // ab.getLiveCount({
 //   deviceId: 'my-custom-device-id',
-//   origin: 'my-custom-origin'
+//   domain: 'my-custom-domain'
 // }, function(error, data) {
 //   if (error) console.error(error);
 //   else console.log('Live count:', data.count);
