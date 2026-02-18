@@ -1,7 +1,7 @@
-(function(window) {
+(function (window) {
     // Initialize 'ab' namespace if it doesn't exist yet
     var ab = window.ab || {};
-    
+
     // Configuration
     var CONFIG = {
         liveUrl: 'https://spd-election.onrender.com/analytics/live',
@@ -31,63 +31,73 @@
         }
     }
 
-    function makeRequest(deviceId) {
+    function makeRequest(config) {
+        var headers = { 'Content-Type': 'application/json' };
+        if (config.origin) {
+            headers['x-origin'] = config.origin;
+        }
+
         return fetch(CONFIG.liveUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ deviceId: deviceId })
-        }).then(function(response) {
+            headers: headers,
+            body: JSON.stringify({ deviceId: config.deviceId })
+        }).then(function (response) {
             if (!response.ok) throw new Error('HTTP ' + response.status);
             return response.json();
         });
     }
 
-    function makeUsersRequest(deviceId) {
+    function makeUsersRequest(config) {
+        var headers = { 'Content-Type': 'application/json' };
+        if (config.origin) {
+            headers['x-origin'] = config.origin;
+        }
+
         return fetch(CONFIG.usersUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ deviceId: deviceId })
-        }).then(function(response) {
+            headers: headers,
+            body: JSON.stringify({ deviceId: config.deviceId })
+        }).then(function (response) {
             if (!response.ok) throw new Error('HTTP ' + response.status);
             return response.json();
         });
     }
 
     // Stop any active polling
-    ab.stopLiveCount = function() {
+    ab.stopLiveCount = function () {
         if (activeInterval) {
             clearTimeout(activeInterval);
             activeInterval = null;
         }
     };
 
-    ab.getLiveCount = function(arg1, arg2, arg3) {
-        // Normalize arguments
-        var deviceId, callback, interval;
-
-        // Handle polymorphic arguments
-        if (typeof arg1 === 'function') {
-            // usage: getLiveCount(callback, interval)
-            callback = arg1;
-            interval = arg2;
-            deviceId = getOrGenerateDeviceId();
-        } else {
-            // usage: getLiveCount(deviceId, callback, interval)
-            deviceId = arg1 || getOrGenerateDeviceId();
-            callback = arg2;
-            interval = arg3;
+    ab.getLiveCount = function (options, callback) {
+        // Handle optional options if first arg is callback
+        if (typeof options === 'function') {
+            callback = options;
+            options = {};
         }
+        options = options || {};
+
+        var deviceId = (options.deviceId && options.deviceId.trim()) || getOrGenerateDeviceId();
+        var interval = options.interval;
+        var origin = options.origin;
+
+        var config = {
+            deviceId: deviceId,
+            origin: origin
+        };
 
         // Clear any existing interval before starting a new one
         ab.stopLiveCount();
 
         // Make one-time call to users API
-        makeUsersRequest(deviceId)
-            .then(function(data) {
+        makeUsersRequest(config)
+            .then(function (data) {
                 // Users count received, data.count available
                 console.log('Users API called successfully');
             })
-            .catch(function(err) {
+            .catch(function (err) {
                 console.error('Users API error:', err);
             });
 
@@ -97,11 +107,11 @@
         // - > 0: use provided interval (minimum 10 seconds)
         if (interval === 0) {
             // Single invocation only, no polling
-            makeRequest(deviceId)
-                .then(function(data) {
+            makeRequest(config)
+                .then(function (data) {
                     if (callback) callback(null, data);
                 })
-                .catch(function(err) {
+                .catch(function (err) {
                     if (callback) callback(err, null);
                 });
             return;
@@ -121,14 +131,14 @@
 
         // Recursive function that waits for each request to complete before scheduling the next
         function runWithInterval() {
-            makeRequest(deviceId)
-                .then(function(data) {
+            makeRequest(config)
+                .then(function (data) {
                     if (callback) callback(null, data);
                 })
-                .catch(function(err) {
+                .catch(function (err) {
                     if (callback) callback(err, null);
                 })
-                .finally(function() {
+                .finally(function () {
                     // Schedule next request after current one completes (success or failure)
                     activeInterval = setTimeout(runWithInterval, intervalSeconds * 1000);
                 });
@@ -152,22 +162,28 @@
 // });
 
 // 2. Single call only (interval = 0):
-// ab.getLiveCount(function(error, data) {
+// ab.getLiveCount({ interval: 0 }, function(error, data) {
 //   if (error) console.error(error);
 //   else console.log('Live count:', data.count);
-// }, 0);
+// });
 
-// 3. Auto-repeat every 30 seconds:
-// ab.getLiveCount(function(error, data) {
+// 3. Auto-repeat every 30 seconds with custom origin:
+// ab.getLiveCount({ 
+//   interval: 30,
+//   origin: 'my-custom-origin'
+// }, function(error, data) {
 //   if (error) console.error(error);
 //   else console.log('Live count:', data.count);
-// }, 30);
+// });
 
-// 4. Auto-repeat every 30 seconds with custom device ID:
-// ab.getLiveCount('my-custom-device-id', function(error, data) {
+// 4. Custom device ID and origin:
+// ab.getLiveCount({
+//   deviceId: 'my-custom-device-id',
+//   origin: 'my-custom-origin'
+// }, function(error, data) {
 //   if (error) console.error(error);
 //   else console.log('Live count:', data.count);
-// }, 30);
+// });
 
 // 5. Stop tracking:
 // ab.stopLiveCount();
