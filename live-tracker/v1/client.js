@@ -10,6 +10,7 @@
     };
 
     var activeInterval = null;
+    var cachedUniqueUsers = null;
 
     function getOrGenerateDeviceId() {
         var key = '_ab_device_id';
@@ -94,8 +95,7 @@
         // Make one-time call to users API
         makeUsersRequest(config)
             .then(function (data) {
-                // Users count received, data.count available
-                console.log('Users API called successfully');
+                cachedUniqueUsers = data.count;
             })
             .catch(function (err) {
                 console.error('Users API error:', err);
@@ -109,7 +109,7 @@
             // Single invocation only, no polling
             makeRequest(config)
                 .then(function (data) {
-                    if (callback) callback(null, data);
+                    if (callback) callback(null, Object.assign({}, data, { uniqueUsers: cachedUniqueUsers }));
                 })
                 .catch(function (err) {
                     if (callback) callback(err, null);
@@ -133,7 +133,7 @@
         function runWithInterval() {
             makeRequest(config)
                 .then(function (data) {
-                    if (callback) callback(null, data);
+                    if (callback) callback(null, Object.assign({}, data, { uniqueUsers: cachedUniqueUsers }));
                 })
                 .catch(function (err) {
                     if (callback) callback(err, null);
