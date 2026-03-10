@@ -158,13 +158,13 @@
 // 1. Auto-repeat every 10 seconds (default behavior):
 // ab.getLiveCount(function(error, data) {
 //   if (error) console.error(error);
-//   else console.log('Live count:', data.count);
+//   else console.log('Live users:', data.count, '| Unique users:', data.uniqueUsers);
 // });
 
 // 2. Single call only (interval = 0):
 // ab.getLiveCount({ interval: 0 }, function(error, data) {
 //   if (error) console.error(error);
-//   else console.log('Live count:', data.count);
+//   else console.log('Live users:', data.count, '| Unique users:', data.uniqueUsers);
 // });
 
 // 3. Auto-repeat every 30 seconds with custom domain:
@@ -173,7 +173,7 @@
 //   domain: 'my-custom-domain'
 // }, function(error, data) {
 //   if (error) console.error(error);
-//   else console.log('Live count:', data.count);
+//   else console.log('Live users:', data.count, '| Unique users:', data.uniqueUsers);
 // });
 
 // 4. Custom device ID and domain:
@@ -182,7 +182,7 @@
 //   domain: 'my-custom-domain'
 // }, function(error, data) {
 //   if (error) console.error(error);
-//   else console.log('Live count:', data.count);
+//   else console.log('Live users:', data.count, '| Unique users:', data.uniqueUsers);
 // });
 
 // 5. Stop tracking:
