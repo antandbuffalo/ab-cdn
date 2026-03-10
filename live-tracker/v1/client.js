@@ -11,6 +11,7 @@
 
     var activeInterval = null;
     var cachedUniqueUsers = null;
+    var isStopped = false;
 
     function getOrGenerateDeviceId() {
         var key = '_ab_device_id';
@@ -66,6 +67,7 @@
 
     // Stop any active polling
     ab.stopLiveCount = function () {
+        isStopped = true;
         if (activeInterval) {
             clearTimeout(activeInterval);
             activeInterval = null;
@@ -91,45 +93,18 @@
 
         // Clear any existing interval before starting a new one
         ab.stopLiveCount();
-
-        // Make one-time call to users API
-        makeUsersRequest(config)
-            .then(function (data) {
-                cachedUniqueUsers = data.count;
-            })
-            .catch(function (err) {
-                console.error('Users API error:', err);
-            });
-
-        // Handle interval parameter
-        // - undefined: default to 10 seconds
-        // - 0: single invocation only (no polling)
-        // - > 0: use provided interval (minimum 10 seconds)
-        if (interval === 0) {
-            // Single invocation only, no polling
-            makeRequest(config)
-                .then(function (data) {
-                    if (callback) callback(null, Object.assign({}, data, { uniqueUsers: cachedUniqueUsers }));
-                })
-                .catch(function (err) {
-                    if (callback) callback(err, null);
-                });
-            return;
-        }
+        isStopped = false; // Reset flag for new session
 
         var intervalSeconds;
         if (interval === undefined) {
-            // Default to minimum interval if not specified
             intervalSeconds = CONFIG.minInterval;
         } else {
-            // Use provided interval, enforce minimum
             intervalSeconds = Math.max(interval, CONFIG.minInterval);
             if (interval < CONFIG.minInterval) {
                 console.warn('Interval clamped to minimum ' + CONFIG.minInterval + 's');
             }
         }
 
-        // Recursive function that waits for each request to complete before scheduling the next
         function runWithInterval() {
             makeRequest(config)
                 .then(function (data) {
@@ -139,13 +114,33 @@
                     if (callback) callback(err, null);
                 })
                 .finally(function () {
-                    // Schedule next request after current one completes (success or failure)
                     activeInterval = setTimeout(runWithInterval, intervalSeconds * 1000);
                 });
         }
 
-        // Start the polling cycle
-        runWithInterval();
+        // Fetch unique users first, then start live polling once resolved
+        makeUsersRequest(config)
+            .then(function (data) {
+                cachedUniqueUsers = data.count;
+            })
+            .catch(function (err) {
+                console.error('Users API error:', err);
+            })
+            .finally(function () {
+                if (isStopped) return;
+
+                if (interval === 0) {
+                    makeRequest(config)
+                        .then(function (data) {
+                            if (callback) callback(null, Object.assign({}, data, { uniqueUsers: cachedUniqueUsers }));
+                        })
+                        .catch(function (err) {
+                            if (callback) callback(err, null);
+                        });
+                } else {
+                    runWithInterval();
+                }
+            });
     };
 
     // Expose ab globally
