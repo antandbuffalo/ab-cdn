@@ -216,11 +216,14 @@
             headers['x-domain'] = options.domain;
         }
 
+        var deviceId = (options.deviceId && options.deviceId.trim()) || getOrGenerateDeviceId();
+
         var body = {
             id: options.id.trim(),
             rating: rating,
             comment: options.comment.trim(),
-            name: options.name.trim()
+            name: options.name.trim(),
+            deviceId: deviceId
         };
 
         fetch(CONFIG.reviewsUrl, {
