@@ -102,18 +102,17 @@ ab.getComments({ domain: 'my-custom-domain' }, function(error, data) {
 Post a new comment/review.
 
 **Required fields:**
-- `id` - User/review identifier (string)
 - `comment` - Review comment (string, max 1000 characters)
 - `name` - Reviewer name (string, max 100 characters)
 
 **Optional fields:**
 - `rating` - Rating value (number 1-5, defaults to 5)
+- `deviceId` - Override the auto-generated device ID (string)
 - `domain` - Custom domain identifier (string)
 
 **Example 8: Post a new comment**
 ```javascript
 ab.postComment({
-  id: 'user123',
   rating: 5,
   comment: 'Great experience!',
   name: 'John Doe'
@@ -126,7 +125,6 @@ ab.postComment({
 **Example 9: Post a comment with custom domain**
 ```javascript
 ab.postComment({
-  id: 'user123',
   rating: 4,
   comment: 'Very good service',
   name: 'Jane Smith',
@@ -140,7 +138,6 @@ ab.postComment({
 **Example 10: Post a comment without rating (defaults to 5)**
 ```javascript
 ab.postComment({
-  id: 'user123',
   comment: 'Great service!',
   name: 'Jane Smith'
 }, function(error, data) {
@@ -154,7 +151,7 @@ ab.postComment({
 Delete a comment/review by ID. **Requires admin authentication token.**
 
 **Required fields:**
-- `id` - Review ID to delete (string)
+- `reviewId` - Review ID to delete (string)
 - `token` - Admin authentication token (string)
 
 **Optional fields:**
@@ -163,7 +160,7 @@ Delete a comment/review by ID. **Requires admin authentication token.**
 **Example 11: Delete a comment (admin only)**
 ```javascript
 ab.deleteComment({
-  id: 'review-id-123',
+  reviewId: 'review-id-123',
   token: 'your-admin-token-here'
 }, function(error, data) {
   if (error) console.error('Failed to delete comment:', error);
@@ -174,7 +171,7 @@ ab.deleteComment({
 **Example 12: Delete a comment with custom domain (admin only)**
 ```javascript
 ab.deleteComment({
-  id: 'review-id-123',
+  reviewId: 'review-id-123',
   token: 'your-admin-token-here',
   domain: 'my-custom-domain'
 }, function(error, data) {
@@ -223,7 +220,6 @@ ab.getComments({ domain: 'app2' }, callback);
 
 // Post comment to 'app3'
 ab.postComment({
-  id: 'user123',
   comment: 'Great!',
   name: 'John',
   domain: 'app3'
