@@ -181,12 +181,6 @@
             return;
         }
 
-        // Validate required fields
-        if (!options.id || typeof options.id !== 'string' || !options.id.trim()) {
-            if (callback) callback(new Error('id is required and must be a non-empty string'), null);
-            return;
-        }
-
         // Rating is optional, defaults to 5
         var rating = options.rating !== undefined ? options.rating : 5;
         if (typeof rating !== 'number' || rating < 1 || rating > 5) {
@@ -219,7 +213,6 @@
         var deviceId = (options.deviceId && options.deviceId.trim()) || getOrGenerateDeviceId();
 
         var body = {
-            id: options.id.trim(),
             rating: rating,
             comment: options.comment.trim(),
             name: options.name.trim(),
@@ -251,8 +244,8 @@
         }
 
         // Validate required fields
-        if (!options.id || typeof options.id !== 'string' || !options.id.trim()) {
-            if (callback) callback(new Error('id is required and must be a non-empty string'), null);
+        if (!options.reviewId || typeof options.reviewId !== 'string' || !options.reviewId.trim()) {
+            if (callback) callback(new Error('reviewId is required and must be a non-empty string'), null);
             return;
         }
         if (!options.token || typeof options.token !== 'string' || !options.token.trim()) {
@@ -269,7 +262,7 @@
         }
 
         var body = {
-            id: options.id.trim()
+            reviewId: options.reviewId.trim()
         };
 
         fetch(CONFIG.reviewsUrl, {
