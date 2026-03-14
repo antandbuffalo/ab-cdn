@@ -6,6 +6,7 @@
     var CONFIG = {
         liveUrl: 'https://spd-election.onrender.com/analytics/live',
         usersUrl: 'https://spd-election.onrender.com/analytics/users',
+        reviewsUrl: 'https://spd-election.onrender.com/election/reviews',
         minInterval: 10
     };
 
@@ -143,42 +144,149 @@
             });
     };
 
+    // Fetch all comments/reviews
+    ab.getComments = function (options, callback) {
+        // Handle optional options if first arg is callback
+        if (typeof options === 'function') {
+            callback = options;
+            options = {};
+        }
+        options = options || {};
+
+        var headers = { 'Content-Type': 'application/json' };
+        if (options.domain) {
+            headers['x-domain'] = options.domain;
+        }
+
+        fetch(CONFIG.reviewsUrl, {
+            method: 'GET',
+            headers: headers
+        })
+            .then(function (response) {
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                return response.json();
+            })
+            .then(function (data) {
+                if (callback) callback(null, data);
+            })
+            .catch(function (err) {
+                if (callback) callback(err, null);
+            });
+    };
+
+    // Post a new comment/review
+    ab.postComment = function (options, callback) {
+        if (!options || typeof options !== 'object') {
+            if (callback) callback(new Error('Options object is required'), null);
+            return;
+        }
+
+        // Validate required fields
+        if (!options.id || typeof options.id !== 'string' || !options.id.trim()) {
+            if (callback) callback(new Error('id is required and must be a non-empty string'), null);
+            return;
+        }
+
+        // Rating is optional, defaults to 5
+        var rating = options.rating !== undefined ? options.rating : 5;
+        if (typeof rating !== 'number' || rating < 1 || rating > 5) {
+            if (callback) callback(new Error('rating must be a number between 1-5'), null);
+            return;
+        }
+
+        if (!options.comment || typeof options.comment !== 'string' || !options.comment.trim()) {
+            if (callback) callback(new Error('comment is required and must be a non-empty string'), null);
+            return;
+        }
+        if (options.comment.length > 1000) {
+            if (callback) callback(new Error('comment must not exceed 1000 characters'), null);
+            return;
+        }
+        if (!options.name || typeof options.name !== 'string' || !options.name.trim()) {
+            if (callback) callback(new Error('name is required and must be a non-empty string'), null);
+            return;
+        }
+        if (options.name.length > 100) {
+            if (callback) callback(new Error('name must not exceed 100 characters'), null);
+            return;
+        }
+
+        var headers = { 'Content-Type': 'application/json' };
+        if (options.domain) {
+            headers['x-domain'] = options.domain;
+        }
+
+        var body = {
+            id: options.id.trim(),
+            rating: rating,
+            comment: options.comment.trim(),
+            name: options.name.trim()
+        };
+
+        fetch(CONFIG.reviewsUrl, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(body)
+        })
+            .then(function (response) {
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                return response.json();
+            })
+            .then(function (data) {
+                if (callback) callback(null, data);
+            })
+            .catch(function (err) {
+                if (callback) callback(err, null);
+            });
+    };
+
+    // Delete a comment/review (admin only)
+    ab.deleteComment = function (options, callback) {
+        if (!options || typeof options !== 'object') {
+            if (callback) callback(new Error('Options object is required'), null);
+            return;
+        }
+
+        // Validate required fields
+        if (!options.id || typeof options.id !== 'string' || !options.id.trim()) {
+            if (callback) callback(new Error('id is required and must be a non-empty string'), null);
+            return;
+        }
+        if (!options.token || typeof options.token !== 'string' || !options.token.trim()) {
+            if (callback) callback(new Error('token is required for authentication'), null);
+            return;
+        }
+
+        var headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + options.token
+        };
+        if (options.domain) {
+            headers['x-domain'] = options.domain;
+        }
+
+        var body = {
+            id: options.id.trim()
+        };
+
+        fetch(CONFIG.reviewsUrl, {
+            method: 'DELETE',
+            headers: headers,
+            body: JSON.stringify(body)
+        })
+            .then(function (response) {
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                return response.json();
+            })
+            .then(function (data) {
+                if (callback) callback(null, data);
+            })
+            .catch(function (err) {
+                if (callback) callback(err, null);
+            });
+    };
+
     // Expose ab globally
     window.ab = ab;
 
 })(window);
-
-// Example usage:
-
-// 1. Auto-repeat every 10 seconds (default behavior):
-// ab.getLiveCount(function(error, data) {
-//   if (error) console.error(error);
-//   else console.log('Live users:', data.count, '| Unique users:', data.uniqueUsers);
-// });
-
-// 2. Single call only (interval = 0):
-// ab.getLiveCount({ interval: 0 }, function(error, data) {
-//   if (error) console.error(error);
-//   else console.log('Live users:', data.count, '| Unique users:', data.uniqueUsers);
-// });
-
-// 3. Auto-repeat every 30 seconds with custom domain:
-// ab.getLiveCount({ 
-//   interval: 30,
-//   domain: 'my-custom-domain'
-// }, function(error, data) {
-//   if (error) console.error(error);
-//   else console.log('Live users:', data.count, '| Unique users:', data.uniqueUsers);
-// });
-
-// 4. Custom device ID and domain:
-// ab.getLiveCount({
-//   deviceId: 'my-custom-device-id',
-//   domain: 'my-custom-domain'
-// }, function(error, data) {
-//   if (error) console.error(error);
-//   else console.log('Live users:', data.count, '| Unique users:', data.uniqueUsers);
-// });
-
-// 5. Stop tracking:
-// ab.stopLiveCount();
