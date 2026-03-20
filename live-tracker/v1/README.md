@@ -13,10 +13,12 @@ Include the SDK in your HTML:
 ## Features
 
 - **Live User Tracking**: Real-time active user count with automatic polling
-- **Unique User Tracking**: Track total unique visitors
-- **Comment/Review System**: Full CRUD operations for comments and reviews
-- **Multi-domain Support**: Isolate data by custom domains
+- **Unique User Tracking**: Track total unique visitors (fetched once at start)
+- **Comment/Review System**: Post and fetch comments/reviews
+- **User Block Check**: Detect if the current device is blocked
 - **Automatic Device ID Management**: Persistent device identification using localStorage
+
+---
 
 ## API Reference
 
@@ -26,7 +28,10 @@ Include the SDK in your HTML:
 
 Track live users with automatic polling.
 
-**Example 1: Auto-repeat every 10 seconds (default behavior)**
+**Options:**
+- `interval` - Polling interval in seconds (number, minimum 10, default 10). Pass `0` to disable polling.
+
+**Example 1: Auto-repeat every 10 seconds (default)**
 ```javascript
 ab.getLiveCount(function(error, data) {
   if (error) console.error(error);
@@ -42,33 +47,20 @@ ab.getLiveCount({ interval: 0 }, function(error, data) {
 });
 ```
 
-**Example 3: Auto-repeat every 30 seconds with custom domain**
+**Example 3: Auto-repeat every 30 seconds**
 ```javascript
-ab.getLiveCount({
-  interval: 30,
-  domain: 'my-custom-domain'
-}, function(error, data) {
+ab.getLiveCount({ interval: 30 }, function(error, data) {
   if (error) console.error(error);
   else console.log('Live users:', data.count, '| Unique users:', data.uniqueUsers);
 });
 ```
 
-**Example 4: Custom device ID and domain**
-```javascript
-ab.getLiveCount({
-  deviceId: 'my-custom-device-id',
-  domain: 'my-custom-domain'
-}, function(error, data) {
-  if (error) console.error(error);
-  else console.log('Live users:', data.count, '| Unique users:', data.uniqueUsers);
-});
-```
+> **Note:** `uniqueUsers` is fetched once at the start and cached for the lifetime of the polling session. Subsequent polling calls will return the same `uniqueUsers` value.
 
 #### `ab.stopLiveCount()`
 
 Stop the active polling interval.
 
-**Example 5: Stop tracking**
 ```javascript
 ab.stopLiveCount();
 ```
@@ -77,21 +69,12 @@ ab.stopLiveCount();
 
 ### Comment/Review Methods
 
-#### `ab.getComments(options, callback)`
+#### `ab.getComments(callback)`
 
 Fetch all comments/reviews.
 
-**Example 6: Fetch all comments**
 ```javascript
 ab.getComments(function(error, data) {
-  if (error) console.error(error);
-  else console.log('Reviews:', data);
-});
-```
-
-**Example 7: Fetch comments with custom domain**
-```javascript
-ab.getComments({ domain: 'my-custom-domain' }, function(error, data) {
   if (error) console.error(error);
   else console.log('Reviews:', data);
 });
@@ -103,14 +86,12 @@ Post a new comment/review.
 
 **Required fields:**
 - `comment` - Review comment (string, max 1000 characters)
-- `name` - Reviewer name (string, max 100 characters)
+- `name` - Reviewer name (string, max 50 characters)
 
 **Optional fields:**
 - `rating` - Rating value (number 1-5, defaults to 5)
-- `deviceId` - Override the auto-generated device ID (string)
-- `domain` - Custom domain identifier (string)
 
-**Example 8: Post a new comment**
+**Example: Post a comment**
 ```javascript
 ab.postComment({
   rating: 5,
@@ -122,20 +103,7 @@ ab.postComment({
 });
 ```
 
-**Example 9: Post a comment with custom domain**
-```javascript
-ab.postComment({
-  rating: 4,
-  comment: 'Very good service',
-  name: 'Jane Smith',
-  domain: 'my-custom-domain'
-}, function(error, data) {
-  if (error) console.error('Failed to post comment:', error);
-  else console.log('Comment posted:', data);
-});
-```
-
-**Example 10: Post a comment without rating (defaults to 5)**
+**Example: Post without rating (defaults to 5)**
 ```javascript
 ab.postComment({
   comment: 'Great service!',
@@ -146,37 +114,19 @@ ab.postComment({
 });
 ```
 
-#### `ab.deleteComment(options, callback)`
+---
 
-Delete a comment/review by ID. **Requires admin authentication token.**
+### User Block Check
 
-**Required fields:**
-- `reviewId` - Review ID to delete (string)
-- `token` - Admin authentication token (string)
+#### `ab.isUserBlocked(callback)`
 
-**Optional fields:**
-- `domain` - Custom domain identifier (string)
+Check if the current device is blocked.
 
-**Example 11: Delete a comment (admin only)**
 ```javascript
-ab.deleteComment({
-  reviewId: 'review-id-123',
-  token: 'your-admin-token-here'
-}, function(error, data) {
-  if (error) console.error('Failed to delete comment:', error);
-  else console.log('Comment deleted:', data);
-});
-```
-
-**Example 12: Delete a comment with custom domain (admin only)**
-```javascript
-ab.deleteComment({
-  reviewId: 'review-id-123',
-  token: 'your-admin-token-here',
-  domain: 'my-custom-domain'
-}, function(error, data) {
-  if (error) console.error('Failed to delete comment:', error);
-  else console.log('Comment deleted:', data);
+ab.isUserBlocked(function(error, data) {
+  if (error) console.error(error);
+  else if (data.isBlocked) console.log('User is blocked');
+  else console.log('User is not blocked');
 });
 ```
 
@@ -189,10 +139,8 @@ All methods use Node.js-style callbacks with the signature `(error, data)`:
 ```javascript
 function callback(error, data) {
   if (error) {
-    // Handle error
     console.error('Error:', error.message);
   } else {
-    // Handle success
     console.log('Success:', data);
   }
 }
@@ -202,29 +150,7 @@ function callback(error, data) {
 
 - **Validation Errors**: Missing required fields, invalid values
 - **Network Errors**: Connection failures, timeouts
-- **Authentication Errors**: Invalid or missing admin token (deleteComment only)
 - **HTTP Errors**: Server errors (4xx, 5xx status codes)
-
----
-
-## Multi-Domain Support
-
-All methods support the optional `domain` parameter to isolate data across different domains or applications:
-
-```javascript
-// Track live users for 'app1'
-ab.getLiveCount({ domain: 'app1' }, callback);
-
-// Get comments for 'app2'
-ab.getComments({ domain: 'app2' }, callback);
-
-// Post comment to 'app3'
-ab.postComment({
-  comment: 'Great!',
-  name: 'John',
-  domain: 'app3'
-}, callback);
-```
 
 ---
 
@@ -235,6 +161,7 @@ The SDK connects to the following backend endpoints:
 - **Live Count**: `https://spd-election.onrender.com/analytics/live`
 - **Unique Users**: `https://spd-election.onrender.com/analytics/users`
 - **Reviews**: `https://spd-election.onrender.com/election/reviews`
+- **Blocked Users**: `https://spd-election.onrender.com/users/blocked`
 
 **Minimum polling interval**: 10 seconds
 

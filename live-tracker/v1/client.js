@@ -17,8 +17,11 @@
     var activeInterval = null;
     var cachedUniqueUsers = null;
     var isStopped = false;
+    var cachedDeviceId = null;
 
     function getOrGenerateDeviceId() {
+        if (cachedDeviceId) return cachedDeviceId;
+
         var key = '_ab_device_id';
         try {
             var id = localStorage.getItem(key);
@@ -27,26 +30,23 @@
                 if (typeof crypto !== 'undefined' && crypto.randomUUID) {
                     id = crypto.randomUUID();
                 } else {
-                    id = 'dev_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+                    id = 'ab_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
                 }
                 localStorage.setItem(key, id);
             }
+            cachedDeviceId = id;
             return id;
         } catch (e) {
             // Fallback if localStorage is disabled/inaccessible (e.g. private browsing)
-            return 'dev_temp_' + Date.now();
+            cachedDeviceId = 'ab_' + Date.now();
+            return cachedDeviceId;
         }
     }
 
     function makeRequest(config) {
-        var headers = { 'Content-Type': 'application/json' };
-        if (config.domain) {
-            headers['x-domain'] = config.domain;
-        }
-
         return fetch(CONFIG.baseUrl + CONFIG.paths.live, {
             method: 'POST',
-            headers: headers,
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ deviceId: config.deviceId })
         }).then(function (response) {
             if (!response.ok) throw new Error('HTTP ' + response.status);
@@ -55,14 +55,9 @@
     }
 
     function makeUsersRequest(config) {
-        var headers = { 'Content-Type': 'application/json' };
-        if (config.domain) {
-            headers['x-domain'] = config.domain;
-        }
-
         return fetch(CONFIG.baseUrl + CONFIG.paths.users, {
             method: 'POST',
-            headers: headers,
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ deviceId: config.deviceId })
         }).then(function (response) {
             if (!response.ok) throw new Error('HTTP ' + response.status);
@@ -89,12 +84,12 @@
 
         var deviceId = getOrGenerateDeviceId();
         var interval = options.interval;
-        var domain = options.domain;
+        if (interval !== undefined && typeof interval !== 'number') {
+            interval = parseInt(interval, 10);
+            if (isNaN(interval)) interval = undefined;
+        }
 
-        var config = {
-            deviceId: deviceId,
-            domain: domain
-        };
+        var config = { deviceId: deviceId };
 
         // Clear any existing interval before starting a new one
         ab.stopLiveCount();
@@ -119,6 +114,7 @@
                     if (callback) callback(err, null);
                 })
                 .finally(function () {
+                    if (isStopped) return;
                     activeInterval = setTimeout(runWithInterval, intervalSeconds * 1000);
                 });
         }
@@ -141,22 +137,9 @@
     };
 
     // Fetch all comments/reviews
-    ab.getComments = function (options, callback) {
-        // Handle optional options if first arg is callback
-        if (typeof options === 'function') {
-            callback = options;
-            options = {};
-        }
-        options = options || {};
-
-        var headers = { 'Content-Type': 'application/json' };
-        if (options.domain) {
-            headers['x-domain'] = options.domain;
-        }
-
+    ab.getComments = function (callback) {
         fetch(CONFIG.baseUrl + CONFIG.paths.reviews, {
-            method: 'GET',
-            headers: headers
+            method: 'GET'
         })
             .then(function (response) {
                 if (!response.ok) throw new Error('HTTP ' + response.status);
@@ -201,11 +184,6 @@
             return;
         }
 
-        var headers = { 'Content-Type': 'application/json' };
-        if (options.domain) {
-            headers['x-domain'] = options.domain;
-        }
-
         var deviceId = getOrGenerateDeviceId();
 
         var body = {
@@ -217,7 +195,7 @@
 
         fetch(CONFIG.baseUrl + CONFIG.paths.reviews, {
             method: 'POST',
-            headers: headers,
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
         })
             .then(function (response) {
@@ -233,23 +211,11 @@
     };
 
     // Check if a device is blocked
-    ab.isUserBlocked = function (options, callback) {
-        if (typeof options === 'function') {
-            callback = options;
-            options = {};
-        }
-        options = options || {};
-
+    ab.isUserBlocked = function (callback) {
         var deviceId = getOrGenerateDeviceId();
 
-        var headers = { 'Content-Type': 'application/json' };
-        if (options.domain) {
-            headers['x-domain'] = options.domain;
-        }
-
         fetch(CONFIG.baseUrl + CONFIG.paths.usersBlocked + '/' + encodeURIComponent(deviceId), {
-            method: 'GET',
-            headers: headers
+            method: 'GET'
         })
             .then(function (response) {
                 if (!response.ok) throw new Error('HTTP ' + response.status);
