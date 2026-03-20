@@ -119,27 +119,19 @@
                 });
         }
 
-        // Fetch unique users first, then start live polling once resolved
-        makeUsersRequest(config)
-            .then(function (data) {
-                cachedUniqueUsers = data.count;
+        // Fetch live count and unique users in parallel
+        Promise.all([makeRequest(config), makeUsersRequest(config)])
+            .then(function (results) {
+                cachedUniqueUsers = results[1].count;
+                if (callback) callback(null, Object.assign({}, results[0], { uniqueUsers: cachedUniqueUsers }));
             })
             .catch(function (err) {
-                console.error('Users API error:', err);
+                if (callback) callback(err, null);
             })
             .finally(function () {
                 if (isStopped) return;
-
-                if (interval === 0) {
-                    makeRequest(config)
-                        .then(function (data) {
-                            if (callback) callback(null, Object.assign({}, data, { uniqueUsers: cachedUniqueUsers }));
-                        })
-                        .catch(function (err) {
-                            if (callback) callback(err, null);
-                        });
-                } else {
-                    runWithInterval();
+                if (interval !== 0) {
+                    activeInterval = setTimeout(runWithInterval, intervalSeconds * 1000);
                 }
             });
     };
@@ -200,8 +192,8 @@
             if (callback) callback(new Error('name is required and must be a non-empty string'), null);
             return;
         }
-        if (options.name.length > 100) {
-            if (callback) callback(new Error('name must not exceed 100 characters'), null);
+        if (options.name.length > 50) {
+            if (callback) callback(new Error('name must not exceed 50 characters'), null);
             return;
         }
 
