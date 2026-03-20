@@ -4,9 +4,13 @@
 
     // Configuration
     var CONFIG = {
-        liveUrl: 'https://spd-election.onrender.com/analytics/live',
-        usersUrl: 'https://spd-election.onrender.com/analytics/users',
-        reviewsUrl: 'https://spd-election.onrender.com/election/reviews',
+        baseUrl: 'https://spd-election.onrender.com',
+        paths: {
+            live: '/analytics/live',
+            users: '/analytics/users',
+            reviews: '/election/reviews',
+            usersBlocked: '/users/blocked'
+        },
         minInterval: 10
     };
 
@@ -40,7 +44,7 @@
             headers['x-domain'] = config.domain;
         }
 
-        return fetch(CONFIG.liveUrl, {
+        return fetch(CONFIG.baseUrl + CONFIG.paths.live, {
             method: 'POST',
             headers: headers,
             body: JSON.stringify({ deviceId: config.deviceId })
@@ -56,7 +60,7 @@
             headers['x-domain'] = config.domain;
         }
 
-        return fetch(CONFIG.usersUrl, {
+        return fetch(CONFIG.baseUrl + CONFIG.paths.users, {
             method: 'POST',
             headers: headers,
             body: JSON.stringify({ deviceId: config.deviceId })
@@ -83,7 +87,7 @@
         }
         options = options || {};
 
-        var deviceId = (options.deviceId && options.deviceId.trim()) || getOrGenerateDeviceId();
+        var deviceId = getOrGenerateDeviceId();
         var interval = options.interval;
         var domain = options.domain;
 
@@ -150,7 +154,7 @@
             headers['x-domain'] = options.domain;
         }
 
-        fetch(CONFIG.reviewsUrl, {
+        fetch(CONFIG.baseUrl + CONFIG.paths.reviews, {
             method: 'GET',
             headers: headers
         })
@@ -202,7 +206,7 @@
             headers['x-domain'] = options.domain;
         }
 
-        var deviceId = (options.deviceId && options.deviceId.trim()) || getOrGenerateDeviceId();
+        var deviceId = getOrGenerateDeviceId();
 
         var body = {
             rating: rating,
@@ -211,7 +215,7 @@
             deviceId: deviceId
         };
 
-        fetch(CONFIG.reviewsUrl, {
+        fetch(CONFIG.baseUrl + CONFIG.paths.reviews, {
             method: 'POST',
             headers: headers,
             body: JSON.stringify(body)
@@ -228,46 +232,31 @@
             });
     };
 
-    // Delete a comment/review (admin only)
-    ab.deleteComment = function (options, callback) {
-        if (!options || typeof options !== 'object') {
-            if (callback) callback(new Error('Options object is required'), null);
-            return;
+    // Check if a device is blocked
+    ab.isUserBlocked = function (options, callback) {
+        if (typeof options === 'function') {
+            callback = options;
+            options = {};
         }
+        options = options || {};
 
-        // Validate required fields
-        if (!options.reviewId || typeof options.reviewId !== 'string' || !options.reviewId.trim()) {
-            if (callback) callback(new Error('reviewId is required and must be a non-empty string'), null);
-            return;
-        }
-        if (!options.token || typeof options.token !== 'string' || !options.token.trim()) {
-            if (callback) callback(new Error('token is required for authentication'), null);
-            return;
-        }
+        var deviceId = getOrGenerateDeviceId();
 
-        var headers = {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + options.token
-        };
+        var headers = { 'Content-Type': 'application/json' };
         if (options.domain) {
             headers['x-domain'] = options.domain;
         }
 
-        var body = {
-            reviewId: options.reviewId.trim()
-        };
-
-        fetch(CONFIG.reviewsUrl, {
-            method: 'DELETE',
-            headers: headers,
-            body: JSON.stringify(body)
+        fetch(CONFIG.baseUrl + CONFIG.paths.usersBlocked + '/' + encodeURIComponent(deviceId), {
+            method: 'GET',
+            headers: headers
         })
             .then(function (response) {
                 if (!response.ok) throw new Error('HTTP ' + response.status);
                 return response.json();
             })
             .then(function (data) {
-                if (callback) callback(null, data);
+                if (callback) callback(null, data.data);
             })
             .catch(function (err) {
                 if (callback) callback(err, null);
