@@ -19,6 +19,10 @@
     var isStopped = false;
     var cachedDeviceId = null;
 
+    function sanitizeInput(str) {
+        return str.replace(/<[^>]*>/g, '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
     function getOrGenerateDeviceId() {
         if (cachedDeviceId) return cachedDeviceId;
 
@@ -188,8 +192,8 @@
 
         var body = {
             rating: rating,
-            comment: options.comment.trim(),
-            name: options.name.trim(),
+            comment: sanitizeInput(options.comment.trim()),
+            name: sanitizeInput(options.name.trim()),
             deviceId: deviceId
         };
 
