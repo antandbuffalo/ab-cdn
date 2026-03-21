@@ -16,6 +16,7 @@ Include the SDK in your HTML:
 - **Unique User Tracking**: Track total unique visitors (fetched once at start)
 - **Comment/Review System**: Post and fetch comments/reviews
 - **User Block Check**: Detect if the current device is blocked
+- **Pending Review Check**: Check if the current device has a comment pending moderation
 - **Automatic Device ID Management**: Persistent device identification using localStorage
 
 ---
@@ -120,13 +121,25 @@ ab.postComment({
 
 #### `ab.isUserBlocked(callback)`
 
-Check if the current device is blocked.
+Check if the current device is blocked. The callback receives a boolean.
 
 ```javascript
-ab.isUserBlocked(function(error, data) {
+ab.isUserBlocked(function(error, isBlocked) {
   if (error) console.error(error);
-  else if (data.isBlocked) console.log('User is blocked');
+  else if (isBlocked) console.log('User is blocked');
   else console.log('User is not blocked');
+});
+```
+
+#### `ab.hasPendingReview(callback)`
+
+Check if the current device has a comment pending moderation. The callback receives a boolean.
+
+```javascript
+ab.hasPendingReview(function(error, hasPending) {
+  if (error) console.error(error);
+  else if (hasPending) console.log('Review is pending moderation');
+  else console.log('No pending review');
 });
 ```
 
@@ -162,6 +175,7 @@ The SDK connects to the following backend endpoints:
 - **Unique Users**: `https://spd-election.onrender.com/analytics/users`
 - **Reviews**: `https://spd-election.onrender.com/election/reviews`
 - **Blocked Users**: `https://spd-election.onrender.com/users/blocked`
+- **Pending Review Status**: `https://spd-election.onrender.com/election/reviews/pending-status`
 
 **Minimum polling interval**: 10 seconds
 

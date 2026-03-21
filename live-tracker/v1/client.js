@@ -9,7 +9,8 @@
             live: '/analytics/live',
             users: '/analytics/users',
             reviews: '/election/reviews',
-            usersBlocked: '/users/blocked'
+            usersBlocked: '/users/blocked',
+            reviewsPendingStatus: '/election/reviews/pending-status'
         },
         minInterval: 10
     };
@@ -166,7 +167,7 @@
 
         // Rating is optional, defaults to 5
         var rating = options.rating !== undefined ? options.rating : 5;
-        if (typeof rating !== 'number' || rating < 1 || rating > 5) {
+        if (typeof rating !== 'number' || !Number.isInteger(rating) || rating < 1 || rating > 5) {
             if (callback) callback(new Error('rating must be a number between 1-5'), null);
             return;
         }
@@ -226,7 +227,26 @@
                 return response.json();
             })
             .then(function (data) {
-                if (callback) callback(null, data.data);
+                if (callback) callback(null, data.isBlocked);
+            })
+            .catch(function (err) {
+                if (callback) callback(err, null);
+            });
+    };
+
+    // Check if the device has a pending review
+    ab.hasPendingReview = function (callback) {
+        var deviceId = getOrGenerateDeviceId();
+
+        fetch(CONFIG.baseUrl + CONFIG.paths.reviewsPendingStatus + '/' + encodeURIComponent(deviceId), {
+            method: 'GET'
+        })
+            .then(function (response) {
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                return response.json();
+            })
+            .then(function (data) {
+                if (callback) callback(null, data.hasPending);
             })
             .catch(function (err) {
                 if (callback) callback(err, null);
