@@ -7,7 +7,7 @@ A lightweight JavaScript SDK for tracking live user counts and managing comments
 Include the SDK in your HTML:
 
 ```html
-<script src="https://your-cdn-url/live-tracker/v1/client.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/antandbuffalo/ab-cdn@v1.4.0/live-tracker/v1/client.js"></script>
 ```
 
 ## Features
