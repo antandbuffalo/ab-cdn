@@ -1,6 +1,6 @@
 # ab-cdn Client SDK
 
-A lightweight JavaScript SDK for tracking live user counts and managing comments/reviews.
+A lightweight JavaScript SDK for tracking live user counts and managing comments.
 
 ## Installation
 
@@ -14,9 +14,9 @@ Include the SDK in your HTML:
 
 - **Live User Tracking**: Real-time active user count with automatic polling
 - **Unique User Tracking**: Track total unique visitors (fetched once at start)
-- **Comment/Review System**: Post and fetch comments/reviews
+- **Comment System**: Post and fetch comments
 - **User Block Check**: Detect if the current device is blocked
-- **Pending Review Check**: Check if the current device has a comment pending moderation
+- **Pending Comment Check**: Check if the current device has a comment pending moderation
 - **Automatic Device ID Management**: Persistent device identification using localStorage
 
 ---
@@ -68,47 +68,32 @@ ab.stopLiveCount();
 
 ---
 
-### Comment/Review Methods
+### Comment Methods
 
 #### `ab.getComments(callback)`
 
-Fetch all comments/reviews.
+Fetch all comments.
 
 ```javascript
 ab.getComments(function(error, data) {
   if (error) console.error(error);
-  else console.log('Reviews:', data);
+  else console.log('Comments:', data);
 });
 ```
 
 #### `ab.postComment(options, callback)`
 
-Post a new comment/review.
+Post a new comment.
 
 **Required fields:**
-- `comment` - Review comment (string, max 1000 characters)
-- `name` - Reviewer name (string, max 50 characters)
+- `comment` - Comment text (string, max 1000 characters)
+- `name` - Commenter name (string, max 50 characters)
 
-**Optional fields:**
-- `rating` - Rating value (number 1-5, defaults to 5)
-
-**Example: Post a comment**
+**Example:**
 ```javascript
 ab.postComment({
-  rating: 5,
   comment: 'Great experience!',
   name: 'John Doe'
-}, function(error, data) {
-  if (error) console.error('Failed to post comment:', error);
-  else console.log('Comment posted:', data);
-});
-```
-
-**Example: Post without rating (defaults to 5)**
-```javascript
-ab.postComment({
-  comment: 'Great service!',
-  name: 'Jane Smith'
 }, function(error, data) {
   if (error) console.error('Failed to post comment:', error);
   else console.log('Comment posted:', data);
@@ -131,17 +116,19 @@ ab.isUserBlocked(function(error, isBlocked) {
 });
 ```
 
-#### `ab.hasPendingReview(callback)`
+#### `ab.hasPendingComment(callback)`
 
 Check if the current device has a comment pending moderation. The callback receives a boolean.
 
 ```javascript
-ab.hasPendingReview(function(error, hasPending) {
+ab.hasPendingComment(function(error, hasPending) {
   if (error) console.error(error);
-  else if (hasPending) console.log('Review is pending moderation');
-  else console.log('No pending review');
+  else if (hasPending) console.log('Comment is pending moderation');
+  else console.log('No pending comment');
 });
 ```
+
+> **Note:** `ab.hasPendingReview` is available as a backward compatibility alias.
 
 ---
 
@@ -173,9 +160,9 @@ The SDK connects to the following backend endpoints:
 
 - **Live Count**: `https://spd-election.onrender.com/analytics/live`
 - **Unique Users**: `https://spd-election.onrender.com/analytics/users`
-- **Reviews**: `https://spd-election.onrender.com/election/reviews`
+- **Comments**: `https://spd-election.onrender.com/comments`
 - **Blocked Users**: `https://spd-election.onrender.com/users/blocked`
-- **Pending Review Status**: `https://spd-election.onrender.com/election/reviews/pending-status`
+- **Pending Comment Status**: `https://spd-election.onrender.com/comments/pending-status`
 
 **Minimum polling interval**: 10 seconds
 

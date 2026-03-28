@@ -8,9 +8,9 @@
         paths: {
             live: '/analytics/live',
             users: '/analytics/users',
-            reviews: '/election/reviews',
+            comments: '/comments',
             usersBlocked: '/users/blocked',
-            reviewsPendingStatus: '/election/reviews/pending-status'
+            commentsPendingStatus: '/comments/pending-status'
         },
         minInterval: 10
     };
@@ -141,9 +141,9 @@
             });
     };
 
-    // Fetch all comments/reviews
+    // Fetch all comments
     ab.getComments = function (callback) {
-        fetch(CONFIG.baseUrl + CONFIG.paths.reviews, {
+        fetch(CONFIG.baseUrl + CONFIG.paths.comments, {
             method: 'GET'
         })
             .then(function (response) {
@@ -158,17 +158,10 @@
             });
     };
 
-    // Post a new comment/review
+    // Post a new comment
     ab.postComment = function (options, callback) {
         if (!options || typeof options !== 'object') {
             if (callback) callback(new Error('Options object is required'), null);
-            return;
-        }
-
-        // Rating is optional, defaults to 5
-        var rating = options.rating !== undefined ? options.rating : 5;
-        if (typeof rating !== 'number' || !Number.isInteger(rating) || rating < 1 || rating > 5) {
-            if (callback) callback(new Error('rating must be a number between 1-5'), null);
             return;
         }
 
@@ -192,13 +185,12 @@
         var deviceId = getOrGenerateDeviceId();
 
         var body = {
-            rating: rating,
             comment: sanitizeInput(options.comment.trim()),
             name: sanitizeInput(options.name.trim()),
             deviceId: deviceId
         };
 
-        fetch(CONFIG.baseUrl + CONFIG.paths.reviews, {
+        fetch(CONFIG.baseUrl + CONFIG.paths.comments, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
@@ -234,11 +226,11 @@
             });
     };
 
-    // Check if the device has a pending review
-    ab.hasPendingReview = function (callback) {
+    // Check if the device has a pending comment
+    ab.hasPendingComment = function (callback) {
         var deviceId = getOrGenerateDeviceId();
 
-        fetch(CONFIG.baseUrl + CONFIG.paths.reviewsPendingStatus + '/' + encodeURIComponent(deviceId), {
+        fetch(CONFIG.baseUrl + CONFIG.paths.commentsPendingStatus + '/' + encodeURIComponent(deviceId), {
             method: 'GET'
         })
             .then(function (response) {
@@ -252,6 +244,9 @@
                 if (callback) callback(err, null);
             });
     };
+
+    // Backward compatibility alias
+    ab.hasPendingReview = ab.hasPendingComment;
 
     // Expose ab globally
     window.ab = ab;
