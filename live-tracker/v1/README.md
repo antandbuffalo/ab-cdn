@@ -7,16 +7,16 @@ A lightweight JavaScript SDK for tracking live user counts and managing comments
 Include the SDK in your HTML:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/antandbuffalo/ab-cdn@v1.4.0/live-tracker/v1/client.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/antandbuffalo/ab-cdn@v1.5.0/live-tracker/v1/client.min.js"></script>
 ```
 
 ## Features
 
 - **Live User Tracking**: Real-time active user count with automatic polling
-- **Unique User Tracking**: Track total unique visitors (fetched once at start)
+- **Unique User Tracking**: Track total unique visitors (fetched once at start and cached)
 - **Comment/Review System**: Post and fetch comments/reviews
 - **User Block Check**: Detect if the current device is blocked
-- **Pending Review Check**: Check if the current device has a comment pending moderation
+- **Pending Comment Check**: Check if the current device has a comment pending moderation
 - **Automatic Device ID Management**: Persistent device identification using localStorage
 
 ---
@@ -27,7 +27,7 @@ Include the SDK in your HTML:
 
 #### `ab.getLiveCount(options, callback)`
 
-Track live users with automatic polling.
+Track live users with automatic polling. The first call fetches live count and unique users in parallel, then subsequent polling requests refresh only the live count while reusing the cached `uniqueUsers` value.
 
 **Options:**
 - `interval` - Polling interval in seconds (number, minimum 10, default 10). Pass `0` to disable polling.
@@ -92,6 +92,11 @@ Post a new comment/review.
 **Optional fields:**
 - `rating` - Rating value (number 1-5, defaults to 5)
 
+**Behavior:**
+- `comment` and `name` are trimmed before submission
+- `comment` and `name` are sanitized before being sent
+- The current device ID is included automatically
+
 **Example: Post a comment**
 ```javascript
 ab.postComment({
@@ -131,12 +136,12 @@ ab.isUserBlocked(function(error, isBlocked) {
 });
 ```
 
-#### `ab.hasPendingReview(callback)`
+#### `ab.hasPendingComment(callback)`
 
 Check if the current device has a comment pending moderation. The callback receives a boolean.
 
 ```javascript
-ab.hasPendingReview(function(error, hasPending) {
+ab.hasPendingComment(function(error, hasPending) {
   if (error) console.error(error);
   else if (hasPending) console.log('Review is pending moderation');
   else console.log('No pending review');
@@ -173,9 +178,9 @@ The SDK connects to the following backend endpoints:
 
 - **Live Count**: `https://spd-election.onrender.com/analytics/live`
 - **Unique Users**: `https://spd-election.onrender.com/analytics/users`
-- **Reviews**: `https://spd-election.onrender.com/election/reviews`
+- **Comments**: `https://spd-election.onrender.com/comments`
 - **Blocked Users**: `https://spd-election.onrender.com/users/blocked`
-- **Pending Review Status**: `https://spd-election.onrender.com/election/reviews/pending-status`
+- **Pending Comment Status**: `https://spd-election.onrender.com/comments/pending-status`
 
 **Minimum polling interval**: 10 seconds
 
@@ -185,7 +190,8 @@ The SDK connects to the following backend endpoints:
 
 - Modern browsers with ES5+ support
 - Requires `fetch` API (or polyfill for older browsers)
-- Uses `localStorage` for device ID persistence (falls back gracefully if unavailable)
+- Uses `localStorage` for device ID persistence
+- Falls back gracefully if `localStorage` is unavailable
 
 ---
 
