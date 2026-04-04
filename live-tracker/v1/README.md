@@ -13,11 +13,11 @@ Include the SDK in your HTML:
 ## Features
 
 - **Live User Tracking**: Real-time active user count with automatic polling
-- **Unique User Tracking**: Track total unique visitors (fetched once at start and cached)
+- **Unique User Tracking**: Fetch total unique visitors once per `getLiveCount()` session and reuse it on subsequent polls
 - **Comment/Review System**: Post and fetch comments/reviews
 - **User Block Check**: Detect if the current device is blocked
 - **Pending Comment Check**: Check if the current device has a comment pending moderation
-- **Automatic Device ID Management**: Persistent device identification using localStorage
+- **Automatic Device ID Management**: Persistent device identification using `localStorage`, with an in-memory fallback
 
 ---
 
@@ -25,12 +25,19 @@ Include the SDK in your HTML:
 
 ### Live Count Tracking
 
-#### `ab.getLiveCount(options, callback)`
+#### `ab.getLiveCount([options], callback)`
 
 Track live users with automatic polling. The first call fetches live count and unique users in parallel, then subsequent polling requests refresh only the live count while reusing the cached `uniqueUsers` value.
 
 **Options:**
-- `interval` - Polling interval in seconds (number, minimum 10, default 10). Pass `0` to disable polling.
+- `interval` - Polling interval in seconds. Defaults to `10`.
+  Values below `10` are clamped to `10` for polling.
+  Pass `0` to make only the initial request and skip repeat polling.
+  Numeric strings are accepted and parsed with `parseInt()`.
+
+**Callback data:**
+- `count` - Current live user count
+- `uniqueUsers` - Total unique users fetched during the initial request
 
 **Example 1: Auto-repeat every 10 seconds (default)**
 ```javascript
@@ -58,6 +65,8 @@ ab.getLiveCount({ interval: 30 }, function(error, data) {
 
 > **Note:** `uniqueUsers` is fetched once at the start and cached for the lifetime of the polling session. Subsequent polling calls will return the same `uniqueUsers` value.
 
+> **Note:** Calling `ab.getLiveCount()` stops any previous live-count polling session before starting a new one.
+
 #### `ab.stopLiveCount()`
 
 Stop the active polling interval.
@@ -72,7 +81,7 @@ ab.stopLiveCount();
 
 #### `ab.getComments(callback)`
 
-Fetch all comments/reviews.
+Fetch all comments/reviews with a `GET` request to the comments endpoint.
 
 ```javascript
 ab.getComments(function(error, data) {
@@ -89,9 +98,6 @@ Post a new comment/review.
 - `comment` - Review comment (string, max 1000 characters)
 - `name` - Reviewer name (string, max 50 characters)
 
-**Optional fields:**
-- `rating` - Rating value (number 1-5, defaults to 5)
-
 **Behavior:**
 - `comment` and `name` are trimmed before submission
 - `comment` and `name` are sanitized before being sent
@@ -100,20 +106,8 @@ Post a new comment/review.
 **Example: Post a comment**
 ```javascript
 ab.postComment({
-  rating: 5,
   comment: 'Great experience!',
   name: 'John Doe'
-}, function(error, data) {
-  if (error) console.error('Failed to post comment:', error);
-  else console.log('Comment posted:', data);
-});
-```
-
-**Example: Post without rating (defaults to 5)**
-```javascript
-ab.postComment({
-  comment: 'Great service!',
-  name: 'Jane Smith'
 }, function(error, data) {
   if (error) console.error('Failed to post comment:', error);
   else console.log('Comment posted:', data);
@@ -126,7 +120,7 @@ ab.postComment({
 
 #### `ab.isUserBlocked(callback)`
 
-Check if the current device is blocked. The callback receives a boolean.
+Check if the current device is blocked. The callback receives `data.isBlocked` as a boolean.
 
 ```javascript
 ab.isUserBlocked(function(error, isBlocked) {
@@ -138,7 +132,7 @@ ab.isUserBlocked(function(error, isBlocked) {
 
 #### `ab.hasPendingComment(callback)`
 
-Check if the current device has a comment pending moderation. The callback receives a boolean.
+Check if the current device has a comment pending moderation. The callback receives `data.hasPending` as a boolean.
 
 ```javascript
 ab.hasPendingComment(function(error, hasPending) {
@@ -190,8 +184,8 @@ The SDK connects to the following backend endpoints:
 
 - Modern browsers with ES5+ support
 - Requires `fetch` API (or polyfill for older browsers)
-- Uses `localStorage` for device ID persistence
-- Falls back gracefully if `localStorage` is unavailable
+- Uses `localStorage` for device ID persistence when available
+- Falls back to an in-memory generated device ID if `localStorage` is unavailable
 
 ---
 

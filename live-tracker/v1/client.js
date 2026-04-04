@@ -165,13 +165,6 @@
             return;
         }
 
-        // Rating is optional, defaults to 5
-        var rating = options.rating !== undefined ? options.rating : 5;
-        if (typeof rating !== 'number' || !Number.isInteger(rating) || rating < 1 || rating > 5) {
-            if (callback) callback(new Error('rating must be a number between 1-5'), null);
-            return;
-        }
-
         if (!options.comment || typeof options.comment !== 'string' || !options.comment.trim()) {
             if (callback) callback(new Error('comment is required and must be a non-empty string'), null);
             return;
@@ -192,7 +185,6 @@
         var deviceId = getOrGenerateDeviceId();
 
         var body = {
-            rating: rating,
             comment: sanitizeInput(options.comment.trim()),
             name: sanitizeInput(options.name.trim()),
             deviceId: deviceId
