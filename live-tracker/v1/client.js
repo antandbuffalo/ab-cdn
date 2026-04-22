@@ -183,12 +183,15 @@
         }
 
         var deviceId = getOrGenerateDeviceId();
-
         var body = {
             comment: sanitizeInput(options.comment.trim()),
             name: sanitizeInput(options.name.trim()),
             deviceId: deviceId
         };
+
+        if (typeof options.captchaToken === 'string' && options.captchaToken.trim()) {
+            body.captchaToken = options.captchaToken.trim();
+        }
 
         fetch(CONFIG.baseUrl + CONFIG.paths.comments, {
             method: 'POST',

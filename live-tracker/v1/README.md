@@ -98,6 +98,9 @@ Post a new comment/review.
 - `comment` - Review comment (string, max 1000 characters)
 - `name` - Reviewer name (string, max 50 characters)
 
+**Optional fields:**
+- `captchaToken` - Pre-generated captcha token from the client app
+
 **Behavior:**
 - `comment` and `name` are trimmed before submission
 - `comment` and `name` are sanitized before being sent
@@ -108,6 +111,18 @@ Post a new comment/review.
 ab.postComment({
   comment: 'Great experience!',
   name: 'John Doe'
+}, function(error, data) {
+  if (error) console.error('Failed to post comment:', error);
+  else console.log('Comment posted:', data);
+});
+```
+
+**Example: Post a comment with a captcha token**
+```javascript
+ab.postComment({
+  comment: 'Great experience!',
+  name: 'John Doe',
+  captchaToken: 'token-from-grecaptcha-execute'
 }, function(error, data) {
   if (error) console.error('Failed to post comment:', error);
   else console.log('Comment posted:', data);
